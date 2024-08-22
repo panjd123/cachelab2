@@ -17,6 +17,48 @@ enum class MemoryAccessType {
     READ_WRITE
 };
 
+enum class RegisterWarperState {
+    ACTIVE,
+    INACTIVE,
+    TMP
+};
+
+class CachelabException : public std::exception {
+   public:
+    CachelabException(const char* msg)
+        : msg_(msg) {}
+    const char* what() const noexcept override {
+        return msg_;
+    }
+
+   private:
+    const char* msg_;
+};
+
+class MemoryDataCalculationException : public CachelabException {
+   public:
+    MemoryDataCalculationException(const char* msg = "you can't directly calculate the data in memory")
+        : CachelabException(msg) {}
+};
+
+class InactiveRegisterException : public CachelabException {
+   public:
+    InactiveRegisterException(const char* msg = "you can't operate on an inactive register")
+        : CachelabException(msg) {}
+};
+
+class MemoryToMemoryAssignmentException : public CachelabException {
+   public:
+    MemoryToMemoryAssignmentException(const char* msg = "you can't assign a memory to another memory directly")
+        : CachelabException(msg) {}
+};
+
+class OutOfRegistersException : public CachelabException {
+   public:
+    OutOfRegistersException(const char* msg = "no more available registers")
+        : CachelabException(msg) {}
+};
+
 template <typename T>
 class MemoryAccessLog {
    public:
@@ -46,9 +88,9 @@ class PtrWarper {
     MemoryWarper<T> operator[](const RegisterWarper<T>&& offset) {
         return MemoryWarper<T>(ptr_ + offset.reg_);
     }
-    PtrWarper<T> operator=(PtrWarper<T> other) {
-        throw std::runtime_error("cannot assign a memory to another memory directly");
-    }
+    // PtrWarper<T> operator=(PtrWarper<T> other) {
+    //     throw MemoryToMemoryAssignmentException();
+    // }
     PtrWarper<T> operator=(RegisterWarper<T> other) {
         *ptr_ = other.reg_;
         return *this;
@@ -74,30 +116,26 @@ class PtrWarper {
         return PtrWarper<T>(ptr_ - offset.reg_);
     }
 
-    RegisterWarper<T> operator-(PtrWarper<T> other) {
-        return RegisterWarper<T>(ptr_ - other.ptr_, true);
+    T operator-(PtrWarper<T> other) {
+        return ptr_ - other.ptr_;
     }
 
     PtrWarper<T> operator++() {
         ptr_++;
         return *this;
     }
-    PtrWarper<T> operator++(int) {
-        PtrWarper ret = PtrWarper<T>(ptr_);
-        ptr_++;
-        return ret;
-    }
+    // don't implement this
+    // PtrWarper<T> operator++(int) {
+    // }
 
     PtrWarper<T> operator--() {
         ptr_--;
         return *this;
     }
+    // don't implement this
+    // PtrWarper<T> operator--(int) {
+    // }
 
-    PtrWarper<T> operator--(int) {
-        PtrWarper ret = PtrWarper<T>(ptr_);
-        ptr_--;
-        return ret;
-    }
     PtrWarper<T> operator+=(int offset) {
         ptr_ += offset;
         return *this;
@@ -142,6 +180,18 @@ class MemoryWarper {
         : ptr_(ptr) {}
     explicit MemoryWarper(const MemoryWarper& other) = delete;
     explicit MemoryWarper(MemoryWarper&& other) = delete;
+
+    const T& operator=(const T& other) {
+        *ptr_ = other;
+        PtrWarper<T>::access_logs.push_back({MemoryAccessType::WRITE, ptr_, -1});
+        return other;
+    }
+    const T& operator=(const T&& other) {
+        *ptr_ = other;
+        PtrWarper<T>::access_logs.push_back({MemoryAccessType::WRITE, ptr_, -1});
+        return other;
+    }
+
     const RegisterWarper<T>& operator=(const RegisterWarper<T>& other) {
         *ptr_ = other.reg_;
         PtrWarper<T>::access_logs.push_back({MemoryAccessType::WRITE, ptr_, other.reg_id_});
@@ -152,6 +202,7 @@ class MemoryWarper {
         PtrWarper<T>::access_logs.push_back({MemoryAccessType::WRITE, ptr_, other.reg_id_});
         return other;
     }
+
     friend std::ostream& operator<<(std::ostream& os, const MemoryWarper<T>& mem) {
         os << *mem.ptr_;
         return os;
@@ -171,274 +222,206 @@ inline int find_reg() {
     for (int i = 0; i < reg_num; i++) {
         if (!reg_map[i]) {
             reg_map[i] = true;
-            // std::cout << "allocate reg: " << i << std::endl;
+            // std::cerr << "allocate reg: " << i << std::endl;
             return i;
         }
     }
-    throw std::runtime_error("no available register");
+    throw OutOfRegistersException();
 }
 
 inline void free_reg(int reg_id) {
-    // std::cout << "free reg: " << reg_id << std::endl;
+    // std::cerr << "free reg: " << reg_id << std::endl;
     reg_map[reg_id] = false;
 }
 
 }  // namespace
 
 template <typename T>
-class RegisterWarper {
-   public:
+class BaseRegisterWarper {
+   protected:
     T reg_;
-    bool tmp_;
+    RegisterWarperState state_;
     int reg_id_;
 
-    RegisterWarper(T reg = 0, bool tmp = false)
-        : reg_(reg), tmp_(tmp) {
-        if (!tmp) {
+    // you can't set state directly
+    BaseRegisterWarper(T reg, RegisterWarperState state, int reg_id = -2)
+        : reg_(reg), state_(state), reg_id_(reg_id) {
+        if (state == RegisterWarperState::ACTIVE) {
             reg_id_ = find_reg();
         }
     }
 
-    RegisterWarper(const MemoryWarper<T>& other)
-        : reg_(*other.ptr_), reg_id_(find_reg()) {
+   public:
+    BaseRegisterWarper(T reg = 0)
+        : reg_(reg), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
+    }
+
+    BaseRegisterWarper(const MemoryWarper<T>& other)
+        : reg_(*other.ptr_), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
         PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
     }
 
-    RegisterWarper(const MemoryWarper<T>&& other)
-        : reg_(*other.ptr_), reg_id_(find_reg()) {
+    BaseRegisterWarper(const MemoryWarper<T>&& other)
+        : reg_(*other.ptr_), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
         PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
     }
 
-    RegisterWarper(const RegisterWarper<T>& other)
-        : reg_(other.reg_), reg_id_(find_reg()) {
+    BaseRegisterWarper(const BaseRegisterWarper<T>& other)
+        : reg_(other.reg_), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
     }
 
-    RegisterWarper(RegisterWarper<T>&& other)
-        : reg_(other.reg_), tmp_(other.tmp_), reg_id_(other.reg_id_) {
-        other.tmp_ = true;
+    BaseRegisterWarper(BaseRegisterWarper<T>&& other)
+        : reg_(other.reg_), state_(other.state_), reg_id_(other.reg_id_) {
+        if (other.state_ == RegisterWarperState::ACTIVE) {
+            other.state_ = RegisterWarperState::INACTIVE;
+            other.reg_ = rand();
+        } else if (other.state_ == RegisterWarperState::INACTIVE) {
+            throw InactiveRegisterException();
+        }
     }
 
-    ~RegisterWarper() {
-        if (!tmp_) {
+    ~BaseRegisterWarper() {
+        if (state_ == RegisterWarperState::ACTIVE) {
             free_reg(reg_id_);
         }
     }
 
-    RegisterWarper<T>& operator=(T other) {
+    void check_valid() const {
+        if (state_ != RegisterWarperState::ACTIVE) {
+            throw InactiveRegisterException();
+        }
+    }
+
+    BaseRegisterWarper<T>& operator=(T other) {
+        check_valid();
         reg_ = other;
         return *this;
     }
 
-    RegisterWarper<T>& operator=(const RegisterWarper<T>& other) {
-        if (tmp_) {
-            throw std::runtime_error("cannot assign");
-        }
+    BaseRegisterWarper<T>& operator=(const BaseRegisterWarper<T>& other) {
+        check_valid();
         reg_ = other.reg_;
         return *this;
     }
 
-    RegisterWarper<T>& operator=(const RegisterWarper<T>&& other) {
-        if (tmp_) {
-            throw std::runtime_error("cannot assign");
-        }
+    BaseRegisterWarper<T>& operator=(BaseRegisterWarper<T>&& other) {
+        // TODO:
+        check_valid();
         reg_ = other.reg_;
+        if (other.state_ == RegisterWarperState::ACTIVE) {
+            other.state_ = RegisterWarperState::INACTIVE;
+        }
         return *this;
     }
 
-    RegisterWarper<T>& operator=(const MemoryWarper<T>& other) {
+    BaseRegisterWarper<T>& operator=(const MemoryWarper<T>& other) {
+        check_valid();
         reg_ = *(other.ptr_);
         PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
         return *this;
     }
 
-    RegisterWarper<T>& operator=(const MemoryWarper<T>&& other) {
+    BaseRegisterWarper<T>& operator=(const MemoryWarper<T>&& other) {
+        check_valid();
         reg_ = *(other.ptr_);
         PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
         return *this;
     }
 
     /* <=> */
-    bool operator<(const RegisterWarper<T>& other) {
+    bool operator<(const BaseRegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
         return reg_ < other.reg_;
     }
-    bool operator<(const RegisterWarper<T>&& other) {
+    bool operator<(const BaseRegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
         return reg_ < other.reg_;
     }
     bool operator<(const T& other) {
+        check_valid();
         return reg_ < other;
     }
     bool operator<(const T&& other) {
+        check_valid();
         return reg_ < other;
     }
 
-    bool operator>(const RegisterWarper<T>& other) {
+    bool operator>(const BaseRegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
         return reg_ > other.reg_;
     }
-    bool operator>(const RegisterWarper<T>&& other) {
+    bool operator>(const BaseRegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
         return reg_ > other.reg_;
     }
     bool operator>(const T& other) {
+        check_valid();
         return reg_ > other;
     }
     bool operator>(const T&& other) {
+        check_valid();
         return reg_ > other;
     }
 
-    bool operator<=(const RegisterWarper<T>& other) {
+    bool operator<=(const BaseRegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
         return reg_ <= other.reg_;
     }
-    bool operator<=(const RegisterWarper<T>&& other) {
+    bool operator<=(const BaseRegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
         return reg_ <= other.reg_;
     }
     bool operator<=(const T& other) {
+        check_valid();
         return reg_ <= other;
     }
     bool operator<=(const T&& other) {
+        check_valid();
         return reg_ <= other;
     }
 
-    bool operator>=(const RegisterWarper<T>& other) {
+    bool operator>=(const BaseRegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
         return reg_ >= other.reg_;
     }
-    bool operator>=(const RegisterWarper<T>&& other) {
+    bool operator>=(const BaseRegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
         return reg_ >= other.reg_;
     }
     bool operator>=(const T& other) {
+        check_valid();
         return reg_ >= other;
     }
     bool operator>=(const T&& other) {
+        check_valid();
         return reg_ >= other;
     }
 
-    bool operator==(const RegisterWarper<T>& other) {
+    bool operator==(const BaseRegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
         return reg_ == other.reg_;
     }
-    bool operator==(const RegisterWarper<T>&& other) {
+    bool operator==(const BaseRegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
         return reg_ == other.reg_;
     }
     bool operator==(const T& other) {
+        check_valid();
         return reg_ == other;
     }
     bool operator==(const T&& other) {
+        check_valid();
         return reg_ == other;
-    }
-
-    /* + */
-
-    RegisterWarper<T> operator+(const RegisterWarper<T>& other) {
-        return RegisterWarper<T>(reg_ + other.reg_, true);
-    }
-    RegisterWarper<T> operator+(const RegisterWarper<T>&& other) {
-        return RegisterWarper<T>(reg_ + other.reg_, true);
-    }
-    RegisterWarper<T> operator+(const T other) {
-        return RegisterWarper<T>(reg_ + other, true);
-    }
-    friend RegisterWarper<T> operator+(const T other, const RegisterWarper<T>& reg) {
-        return RegisterWarper<T>(other + reg.reg_, true);
-    }
-
-    void operator+=(const RegisterWarper<T>& other) {
-        reg_ += other.reg_;
-    }
-    void operator+=(const RegisterWarper<T>&& other) {
-        reg_ += other.reg_;
-    }
-    void operator+=(const T other) {
-        reg_ += other;
-    }
-
-    RegisterWarper operator++() {
-        reg_++;
-        return RegisterWarper<T>(reg_, true);
-    }
-    RegisterWarper operator++(int) {
-        RegisterWarper ret = RegisterWarper<T>(reg_, true);
-        reg_++;
-        return ret;
-    }
-
-    /* - */
-
-    RegisterWarper<T> operator-(const RegisterWarper<T>& other) {
-        return RegisterWarper<T>(reg_ - other.reg_, true);
-    }
-    RegisterWarper<T> operator-(const RegisterWarper<T>&& other) {
-        return RegisterWarper<T>(reg_ - other.reg_, true);
-    }
-    RegisterWarper<T> operator-(const T other) {
-        return RegisterWarper<T>(reg_ - other, true);
-    }
-    friend RegisterWarper<T> operator-(const T other, const RegisterWarper<T>& reg) {
-        return RegisterWarper<T>(other - reg.reg_, true);
-    }
-
-    void operator-=(const RegisterWarper<T>& other) {
-        reg_ -= other.reg_;
-    }
-    void operator-=(const RegisterWarper<T>&& other) {
-        reg_ -= other.reg_;
-    }
-    void operator-=(const T other) {
-        reg_ -= other;
-    }
-
-    RegisterWarper operator--() {
-        reg_--;
-        return RegisterWarper<T>(reg_, true);
-    }
-    RegisterWarper operator--(int) {
-        RegisterWarper ret = RegisterWarper<T>(reg_, true);
-        reg_--;
-        return ret;
-    }
-
-    /* * */
-    RegisterWarper<T> operator*(const RegisterWarper<T>& other) {
-        return RegisterWarper<T>(reg_ * other.reg_, true);
-    }
-    RegisterWarper<T> operator*(const RegisterWarper<T>&& other) {
-        return RegisterWarper<T>(reg_ * other.reg_, true);
-    }
-    RegisterWarper<T> operator*(const T other) {
-        return RegisterWarper<T>(reg_ * other, true);
-    }
-    friend RegisterWarper<T> operator*(const T other, const RegisterWarper<T>& reg) {
-        return RegisterWarper<T>(other * reg.reg_, true);
-    }
-
-    void operator*=(const RegisterWarper<T>& other) {
-        reg_ *= other.reg_;
-    }
-    void operator*=(const RegisterWarper<T>&& other) {
-        reg_ *= other.reg_;
-    }
-    void operator*=(const T other) {
-        reg_ *= other;
-    }
-
-    /* / */
-    RegisterWarper<T> operator/(const RegisterWarper<T>& other) {
-        return RegisterWarper<T>(reg_ / other.reg_, true);
-    }
-    RegisterWarper<T> operator/(const RegisterWarper<T>&& other) {
-        return RegisterWarper<T>(reg_ / other.reg_, true);
-    }
-    RegisterWarper<T> operator/(const T other) {
-        return RegisterWarper<T>(reg_ / other, true);
-    }
-    friend RegisterWarper<T> operator/(const T other, const RegisterWarper<T>& reg) {
-        return RegisterWarper<T>(other / reg.reg_, true);
-    }
-
-    void operator/=(const RegisterWarper<T>& other) {
-        reg_ /= other.reg_;
-    }
-    void operator/=(const RegisterWarper<T>&& other) {
-        reg_ /= other.reg_;
-    }
-    void operator/=(const T other) {
-        reg_ /= other;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const RegisterWarper<T>& reg) {
@@ -449,6 +432,456 @@ class RegisterWarper {
         os << reg.reg_;
         return os;
     }
+
+    std::string info() {
+        std::string state;
+        switch (state_) {
+            case RegisterWarperState::ACTIVE:
+                state = "ACTIVE";
+                break;
+            case RegisterWarperState::INACTIVE:
+                state = "INACTIVE";
+                break;
+            case RegisterWarperState::TMP:
+                state = "TMP";
+                break;
+            default:
+                state = "UNKOWN";
+                break;
+        }
+        return "$" + std::to_string(reg_id_) + "(" + state + "): " + std::to_string(reg_);
+    }
+
+    friend class MemoryWarper<T>;
+    // friend class PtrWarper<T>;
+};
+
+template <typename T>
+class RegisterWarper : public BaseRegisterWarper<T> {
+   private:
+    T reg_;
+    RegisterWarperState state_;
+    int reg_id_;
+
+    // you can't set state directly
+    RegisterWarper(T reg, RegisterWarperState state, int reg_id = -2)
+        : BaseRegisterWarper<T>(reg, state, reg_id) {
+    }
+
+   public:
+    RegisterWarper(T reg = 0)
+        : reg_(reg), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
+    }
+
+    RegisterWarper(const MemoryWarper<T>& other)
+        : reg_(*other.ptr_), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
+        PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
+    }
+
+    RegisterWarper(const MemoryWarper<T>&& other)
+        : reg_(*other.ptr_), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
+        PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
+    }
+
+    RegisterWarper(const RegisterWarper<T>& other)
+        : reg_(other.reg_), state_(RegisterWarperState::ACTIVE), reg_id_(find_reg()) {
+    }
+
+    RegisterWarper(RegisterWarper<T>&& other)
+        : reg_(other.reg_), state_(other.state_), reg_id_(other.reg_id_) {
+        if (other.state_ == RegisterWarperState::ACTIVE) {
+            other.state_ = RegisterWarperState::INACTIVE;
+            other.reg_ = rand();
+        } else if (other.state_ == RegisterWarperState::INACTIVE) {
+            throw InactiveRegisterException();
+        }
+    }
+
+    ~RegisterWarper() {
+        if (state_ == RegisterWarperState::ACTIVE) {
+            free_reg(reg_id_);
+        }
+    }
+
+    void check_valid() const {
+        if (state_ != RegisterWarperState::ACTIVE) {
+            throw InactiveRegisterException();
+        }
+    }
+
+    RegisterWarper<T>& operator=(T other) {
+        check_valid();
+        reg_ = other;
+        return *this;
+    }
+
+    RegisterWarper<T>& operator=(const RegisterWarper<T>& other) {
+        check_valid();
+        reg_ = other.reg_;
+        return *this;
+    }
+
+    RegisterWarper<T>& operator=(RegisterWarper<T>&& other) {
+        // TODO:
+        check_valid();
+        reg_ = other.reg_;
+        if (other.state_ == RegisterWarperState::ACTIVE) {
+            other.state_ = RegisterWarperState::INACTIVE;
+        }
+        return *this;
+    }
+
+    RegisterWarper<T>& operator=(const MemoryWarper<T>& other) {
+        check_valid();
+        reg_ = *(other.ptr_);
+        PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
+        return *this;
+    }
+
+    RegisterWarper<T>& operator=(const MemoryWarper<T>&& other) {
+        check_valid();
+        reg_ = *(other.ptr_);
+        PtrWarper<T>::access_logs.push_back({MemoryAccessType::READ, other.ptr_, reg_id_});
+        return *this;
+    }
+
+    /* <=> */
+    bool operator<(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ < other.reg_;
+    }
+    bool operator<(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ < other.reg_;
+    }
+    bool operator<(const T& other) {
+        check_valid();
+        return reg_ < other;
+    }
+    bool operator<(const T&& other) {
+        check_valid();
+        return reg_ < other;
+    }
+
+    bool operator>(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ > other.reg_;
+    }
+    bool operator>(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ > other.reg_;
+    }
+    bool operator>(const T& other) {
+        check_valid();
+        return reg_ > other;
+    }
+    bool operator>(const T&& other) {
+        check_valid();
+        return reg_ > other;
+    }
+
+    bool operator<=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ <= other.reg_;
+    }
+    bool operator<=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ <= other.reg_;
+    }
+    bool operator<=(const T& other) {
+        check_valid();
+        return reg_ <= other;
+    }
+    bool operator<=(const T&& other) {
+        check_valid();
+        return reg_ <= other;
+    }
+
+    bool operator>=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ >= other.reg_;
+    }
+    bool operator>=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ >= other.reg_;
+    }
+    bool operator>=(const T& other) {
+        check_valid();
+        return reg_ >= other;
+    }
+    bool operator>=(const T&& other) {
+        check_valid();
+        return reg_ >= other;
+    }
+
+    bool operator==(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ == other.reg_;
+    }
+    bool operator==(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ == other.reg_;
+    }
+    bool operator==(const T& other) {
+        check_valid();
+        return reg_ == other;
+    }
+    bool operator==(const T&& other) {
+        check_valid();
+        return reg_ == other;
+    }
+
+    /* + */
+
+    T operator+(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ + other.reg_;
+    }
+    T operator+(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ + other.reg_;
+    }
+    T operator+(const T other) {
+        check_valid();
+        return reg_ + other;
+    }
+    friend T operator+(const T other, const RegisterWarper<T>& reg) {
+        reg.check_valid();
+        return other + reg.reg_;
+    }
+
+    T operator+=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        reg_ += other.reg_;
+        return reg_;
+    }
+    T operator+=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        reg_ += other.reg_;
+        return reg_;
+    }
+    T operator+=(const T other) {
+        check_valid();
+        reg_ += other;
+        return reg_;
+    }
+    T operator++() {
+        check_valid();
+        reg_++;
+        return reg_;
+    }
+
+    // don't implement this
+    // RegisterWarper operator++(int) {
+    // }
+
+    /* - */
+
+    T operator-(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ - other.reg_;
+    }
+    T operator-(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ - other.reg_;
+    }
+    T operator-(const T other) {
+        check_valid();
+        other.check_valid();
+        return reg_ - other;
+    }
+    friend T operator-(const T other, const RegisterWarper<T>& reg) {
+        reg.check_valid();
+        return other - reg.reg_;
+    }
+
+    T operator-=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        reg_ -= other.reg_;
+        return reg_;
+    }
+    T operator-=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        reg_ -= other.reg_;
+        return reg_;
+    }
+    T operator-=(const T other) {
+        check_valid();
+        reg_ -= other;
+        return reg_;
+    }
+    T operator--() {
+        check_valid();
+        reg_--;
+        return reg_;
+    }
+
+    // don't implement this
+    // RegisterWarper operator--(int) {
+    // }
+
+    /* * */
+    T operator*(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ * other.reg_;
+    }
+    T operator*(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ * other.reg_;
+    }
+    T operator*(const T other) {
+        check_valid();
+        return reg_ * other;
+    }
+    friend T operator*(const T other, const RegisterWarper<T>& reg) {
+        reg.check_valid();
+        return other * reg.reg_;
+    }
+
+    T operator*=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        reg_ *= other.reg_;
+        return reg_;
+    }
+    T operator*=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        reg_ *= other.reg_;
+        return reg_;
+    }
+    T operator*=(const T other) {
+        check_valid();
+        reg_ *= other;
+        return reg_;
+    }
+
+    /* / */
+    T operator/(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ / other.reg_;
+    }
+    T operator/(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ / other.reg_;
+    }
+    T operator/(const T other) {
+        check_valid();
+        return reg_ / other;
+    }
+    friend T operator/(const T other, const RegisterWarper<T>& reg) {
+        reg.check_valid();
+        return other / reg.reg_;
+    }
+
+    T operator/=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        reg_ /= other.reg_;
+        return reg_;
+    }
+    T operator/=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        reg_ /= other.reg_;
+        return reg_;
+    }
+    T operator/=(const T other) {
+        check_valid();
+        reg_ /= other;
+        return reg_;
+    }
+
+    /* % */
+    T operator%(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ % other.reg_;
+    }
+    T operator%(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        return reg_ % other.reg_;
+    }
+    T operator%(const T other) {
+        check_valid();
+        return reg_ % other;
+    }
+    friend T operator%(const T other, const RegisterWarper<T>& reg) {
+        reg.check_valid();
+        return other % reg.reg_;
+    }
+
+    T operator%=(const RegisterWarper<T>& other) {
+        check_valid();
+        other.check_valid();
+        reg_ %= other.reg_;
+        return reg_;
+    }
+    T operator%=(const RegisterWarper<T>&& other) {
+        check_valid();
+        other.check_valid();
+        reg_ %= other.reg_;
+        return reg_;
+    }
+    T operator%=(const T other) {
+        check_valid();
+        reg_ %= other;
+        return reg_;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const RegisterWarper<T>& reg) {
+        os << reg.reg_;
+        return os;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const RegisterWarper<T>&& reg) {
+        os << reg.reg_;
+        return os;
+    }
+
+    std::string info() {
+        std::string state;
+        switch (state_) {
+            case RegisterWarperState::ACTIVE:
+                state = "ACTIVE";
+                break;
+            case RegisterWarperState::INACTIVE:
+                state = "INACTIVE";
+                break;
+            case RegisterWarperState::TMP:
+                state = "TMP";
+                break;
+            default:
+                state = "UNKOWN";
+                break;
+        }
+        return "$" + std::to_string(reg_id_) + "(" + state + "): " + std::to_string(reg_);
+    }
+
+    friend class MemoryWarper<T>;
+    friend class PtrWarper<T>;
 };
 
 template <typename T>
