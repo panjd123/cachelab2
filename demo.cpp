@@ -15,8 +15,8 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     dtype_ptr subC = C + 10;  // 初始化一个指针，指针也会占用一个寄存器，注意函数传入的参数也占用了寄存器
     reg var[2];               // 你可以申请寄存器数组
 
-    // dtype_ptr mem1;           // 但你不能申请内存，或者内存数组
-    // error: no default constructor exists for class "PtrWarper<int>
+    // int mem1;                 // 但你不能申请内存，或者内存数组
+    // int mem2[2];              // 但你不能申请内存，或者内存数组
 
     reg c = *subC;                                          // 用 * 操作符读内存到寄存器
     reg d = A[a * b * (c + 5)];                             // 寄存器运算的结果可以作为下标使用
@@ -52,8 +52,13 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     reg old_reg = A[10];
     std::cout << old_reg.info() << std ::endl;  // $4(ACTIVE): 10
     // 在 DEBUG 的时候你可以查看寄存器信息，比如寄存器序号和当前状态
+
     std::cout << old_reg << std::endl;
     // 也可以直接输出寄存器的值
+
+    std::cout << std::hex << A << std::endl;
+    std::cout << A.info() << std::endl;
+    // 还可以输出指针的值，即指向的地址，注意默认总是 10 进制输出
 
     // 有时候你希望把一个寄存器绑定撤销，也就是之前的一个 reg 再也不用了，你不希望它占用一个寄存器，你可以用下面两种方法
 

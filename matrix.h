@@ -4,7 +4,7 @@
 #include <vector>
 #include "common.h"
 
-#define BUFFER_SIZE 32
+#define BUFFER_SIZE 64
 namespace {
 extern std::vector<int*> ptrs;
 }

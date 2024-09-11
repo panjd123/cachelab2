@@ -2,4 +2,7 @@
 *.o
 main
 demo
+.csim_results
 *.trace
+csim-ref.c
+csim

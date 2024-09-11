@@ -74,7 +74,7 @@ inline int find_reg() {
     for (int i = 0; i < reg_num; i++) {
         if (!reg_map[i]) {
             reg_map[i] = true;
-            std::cerr << "allocate reg: " << i << std::endl;
+            // std::cerr << "allocate reg: " << i << std::endl;
             return i;
         }
     }
@@ -82,7 +82,7 @@ inline int find_reg() {
 }
 
 inline void free_reg(int reg_id) {
-    std::cerr << "free reg: " << reg_id << std::endl;
+    // std::cerr << "free reg: " << reg_id << std::endl;
     reg_map[reg_id] = false;
 }
 
@@ -411,6 +411,34 @@ class PtrWarper : public BaseRegisterWarper<int> {
     PtrWarper<T> operator-=(const RegisterWarper<T>&& offset) {
         ptr_ -= offset.reg_;
         return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const PtrWarper<T>& ptr) {
+        os << ptr.ptr_ - PtrWarper<T>::base + PtrWarper<T>::base_offset;
+        return os;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const PtrWarper<T>&& ptr) {
+        os << ptr.ptr_ - PtrWarper<T>::base + PtrWarper<T>::base_offset;
+        return os;
+    }
+
+    std::string info() {
+        std::string state;
+        switch (state_) {
+            case RegisterWarperState::ACTIVE:
+                state = "ACTIVE";
+                break;
+            case RegisterWarperState::INACTIVE:
+                state = "INACTIVE";
+                break;
+            case RegisterWarperState::TMP:
+                state = "TMP";
+                break;
+            default:
+                state = "UNKOWN";
+                break;
+        }
+        return "$" + std::to_string(reg_id_) + "(" + state + "): " + std::to_string(ptr_ - PtrWarper<T>::base + PtrWarper<T>::base_offset);
     }
 };
 
