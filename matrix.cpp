@@ -32,13 +32,28 @@ std::tuple<dtype_ptr, dtype_ptr, dtype_ptr, dtype_ptr> init(int m, int n, int p)
     dtype_ptr B(rawB);
     dtype_ptr C(rawC);
     dtype_ptr D(buffer);
-    return std::make_tuple(A, B, C, D);
+    return std::make_tuple(std::move(A), std::move(B), std::move(C), std::move(D));
 }
 
 bool correct_check(dtype_ptr A, dtype_ptr B, dtype_ptr C, int m, int n, int p) {
     int* rawA = A.ptr_;
     int* rawB = B.ptr_;
     int* rawC = C.ptr_;
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < p; j++) {
+            int sum = 0;
+            for (int k = 0; k < n; k++) {
+                sum += rawA[i * n + k] * rawB[k * p + j];
+            }
+            if (sum != rawC[i * p + j]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool correct_check(int* rawA, int* rawB, int* rawC, int m, int n, int p) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
             int sum = 0;

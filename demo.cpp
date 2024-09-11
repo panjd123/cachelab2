@@ -1,9 +1,8 @@
+// clang-format off
 #include "cachelab.h"
 
 // demo 函数会演示部分你可以/不可以使用的语法
 // 事实上，多数情况只要不在编译期报错的语法就是可以写的
-
-// 注意，你不能自己申请额外的内存，即不能使用 new/malloc，全局变量只要是 reg 就是被允许的
 
 void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     /********** 基础用法 **********/
@@ -11,23 +10,43 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     reg b = 100;              // 初始化一个寄存器，并初始化一个常数，这不会导致内存访问，默认初始化为 0
     b = B[10];                // 读内存到寄存器
     B[10] = a;                // 将寄存器写入内存
-    dtype_ptr subC = C + 10;  // 初始化一个指针，指针不占用寄存器，但不要试图用指针指向的地址来替代寄存器做运算
+    A[0] = 0;                 // 这会产生一条特殊的内存访问记录，其寄存器编号为 -1，代表不是来着于寄存器，而是立即数
+                              // 其开销等于从寄存器到内存
+    dtype_ptr subC = C + 10;  // 初始化一个指针，指针也会占用一个寄存器，注意函数传入的参数也占用了寄存器
+    reg var[2];               // 你可以申请寄存器数组
+
+    // dtype_ptr mem1;           // 但你不能申请内存，或者内存数组
+    // error: no default constructor exists for class "PtrWarper<int>
 
     reg c = *subC;                                          // 用 * 操作符读内存到寄存器
     reg d = A[a * b * (c + 5)];                             // 寄存器运算的结果可以作为下标使用
     [[maybe_unused]] dtype_ptr subA = A + a * (b + 5) * c;  // 也可以用于指针运算
-    A[0] = 0;                                               // 这会产生一条特殊的内存访问记录，其寄存器编号为 -1，代表不是来着于寄存器，而是立即数
-                                                            // 其开销视作从寄存器到内存
     /*****************************/
 
+
     /********** 特殊情况 **********/
-    // 大多数 +-*/% 指令都是可以用的，除了下面这个情况
+    // 大多数 +-*/% 操作都是可以用的，除了下面这个情况
     // a--;                                // 我们删掉了 operator--(int) 和 operator++(int) 操作符
     //                                     // 因为这事实上需要临时保存原来的值以返回，意味着一个额外的寄存器占用
     //                                     // 如果你确实需要这个行为，你可以分成两步完成
     b = a;
     --b;
     /*****************************/
+
+
+    /********** 禁用用法 **********/
+    // 以下操作会在编译期报错
+
+    // A[0] * B[0];      // 内存上的数据不能直接参与计算
+    // error: no match for ‘operator*’ (operand types are ‘MemoryWarper<int>’ and ‘MemoryWarper<int>’)
+
+    // A[0] * a;         // 内存上的数据不能直接参与计算
+    // error: no match for ‘operator*’ (operand types are ‘MemoryWarper<int>’ and ‘int’)
+
+    // A[0] = *(B + 1);  // 不能直接内存到内存赋值
+    // error: use of deleted function ‘constexpr MemoryWarper<int>& MemoryWarper<int>::operator=(const MemoryWarper<int>&)’
+    /*****************************/
+
 
     /********** 高级用法 **********/
     reg old_reg = A[10];
@@ -39,7 +58,7 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     // 有时候你希望把一个寄存器绑定撤销，也就是之前的一个 reg 再也不用了，你不希望它占用一个寄存器，你可以用下面两种方法
 
     // 方法1，重命名
-    reg new_reg = std::move(old_reg);  // 这相当于把 old_reg 重命名
+    reg new_reg = std::move(old_reg);  // 这相当于把 old_reg 重命名，值也会带走
     try {
         old_reg = A[0];  // 之后 old_reg 会失效，值会变为随机数，再使用它会抛出运行时错误
     } catch (InactiveRegisterException& e) {
@@ -57,18 +76,17 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     }  // tmp_reg 会被释放
     /*****************************/
 
-    /********** 禁用用法 **********/
-    // 以下操作会在编译期报错
 
-    // A[0] * B[0];      // 内存上的数据不能直接参与计算
-    // error: no match for ‘operator*’ (operand types are ‘MemoryWarper<int>’ and ‘MemoryWarper<int>’)
+    /********** 怎么使用函数 **********/
+    // 直接传参，默认是拷贝构造，意味着会多占用一个寄存器，如果这不是你的本意，我们推荐传引用
+    // void example1(dtype_ptr& ptr);
+    // example1(A);
 
-    // A[0] * a;         // 内存上的数据不能直接参与计算
-    // error: no match for ‘operator*’ (operand types are ‘MemoryWarper<int>’ and ‘int’)
-
-    // A[0] = *(B + 1);  // 不能直接内存到内存赋值
-    // error: use of deleted function ‘constexpr MemoryWarper<int>& MemoryWarper<int>::operator=(const MemoryWarper<int>&)’
+    // 或者使用 std::move，虽然这通常没必要
+    // void example2(dtype_ptr ptr);
+    // example2(std::move(A));
     /*****************************/
+
 
     /********** 一个说明 **********/
     // 这里有一个实现上故意放过的漏洞，
@@ -88,5 +106,5 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 
 int main() {
     auto [A, B, C, buffer] = init(32, 32, 32);
-    demo(A, B, C, buffer);
+    demo(std::move(A), std::move(B), std::move(C), std::move(buffer));
 }

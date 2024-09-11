@@ -11,6 +11,28 @@
 
 #include "gemm.h"
 
+#define m 2
+#define n 2
+#define p 2
+
+void gemm_case0(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
+    for (reg i = 0; i < m; ++i) {
+        for (reg j = 0; j < p; ++j) {
+            reg tmpc = 0;
+            for (reg k = 0; k < n; ++k) {
+                reg tmpa = A[i * n + k];
+                reg tmpb = B[k * p + j];
+                tmpc += tmpa * tmpb;
+            }
+            C[i * p + j] = tmpc;
+        }
+    }
+}
+
+#undef m
+#undef n
+#undef p
+
 #define m 32
 #define n 32
 #define p 32

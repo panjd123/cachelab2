@@ -8,3 +8,6 @@ CMU CacheLab 升级版
 make -j
 ./main > case1.trace
 ```
+
+## 问题背景
+

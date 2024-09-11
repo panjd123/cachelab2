@@ -9,20 +9,20 @@ matrix.o: matrix.cpp matrix.h common.h
 gemm.o: gemm.cpp matrix.h common.h
 	$(CC) $(CFLAGS) -c gemm.cpp
 
-main.o: main.cpp gemm.h matrix.h common.h
+test_case.o: test_case.cpp gemm.h matrix.h common.h
+	$(CC) $(CFLAGS) -c test_case.cpp
+
+main.o: main.cpp gemm.h matrix.h common.h test_case.h
 	$(CC) $(CFLAGS) -c main.cpp
 
-main: main.o gemm.o matrix.o
-	$(CC) $(CFLAGS) -o main main.o gemm.o matrix.o
+main: main.o gemm.o matrix.o test_case.o
+	$(CC) $(CFLAGS) -o main main.o gemm.o matrix.o test_case.o
 
 demo.o: demo.cpp gemm.h matrix.h common.h
 	$(CC) $(CFLAGS) -c demo.cpp
 
 demo: demo.o gemm.o matrix.o
 	$(CC) $(CFLAGS) -o demo demo.o gemm.o matrix.o
-
-test:
-	./demo
 
 case1:
 	./main case1 > case1.trace
