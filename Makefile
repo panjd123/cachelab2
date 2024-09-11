@@ -24,6 +24,9 @@ demo.o: demo.cpp gemm.h matrix.h common.h
 demo: demo.o gemm.o matrix.o
 	$(CC) $(CFLAGS) -o demo demo.o gemm.o matrix.o
 
+case0:
+	./main case0 > case0.trace
+
 case1:
 	./main case1 > case1.trace
 

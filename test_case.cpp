@@ -19,7 +19,7 @@ void test_case(int m, int n, int p, void (*gemm_case)(dtype_ptr, dtype_ptr, dtyp
 }
 
 void case0() {
-    test_case(32, 32, 32, gemm_case0);
+    test_case(2, 2, 2, gemm_case0);
 }
 
 void case1() {
