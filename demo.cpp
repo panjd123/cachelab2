@@ -69,10 +69,10 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     } catch (InactiveRegisterException& e) {
         std::cout << "InactiveRegisterException: " << e.what() << std::endl;
     }
-    std::cout << old_reg.info() << std ::endl  // $4(INACTIVE): 1804289383
+    std::cout << old_reg.info() << std::endl   // $4(INACTIVE): 1804289383
               << new_reg.info() << std::endl;  // $4(ACTIVE): 10
     new_reg = 1;
-    std::cout << old_reg.info() << std ::endl  // $4(INACTIVE): 1804289383
+    std::cout << old_reg.info() << std::endl   // $4(INACTIVE): 1804289383
               << new_reg.info() << std::endl;  // $4(ACTIVE): 1
 
     // 方法2，给寄存器一个显式的作用域
@@ -110,6 +110,7 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 }
 
 int main() {
+    // 这里的代码不需要学生修改/理解
     auto [A, B, C, buffer] = init(32, 32, 32);
     demo(std::move(A), std::move(B), std::move(C), std::move(buffer));
 }
