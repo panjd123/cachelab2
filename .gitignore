@@ -3,6 +3,9 @@
 main
 demo
 .csim_results
-*.trace
+gemm_traces/
 csim-ref.c
 csim
+handin.tar
+.access_key
+__pycache__

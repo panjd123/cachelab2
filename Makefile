@@ -3,7 +3,7 @@ CFLAGS=-Wall -O0 -g -std=c++17 -fsanitize=address
 CSIMFALGS=-Wall -O2 -g
 # change to "CSIMFALGS=-Wall -O0 -g" for debugging
 
-all: main demo csim
+all: main demo csim # handin
 
 matrix.o: matrix.cpp matrix.h common.h
 	$(CC) $(CFLAGS) -c matrix.cpp
@@ -32,17 +32,30 @@ csim: csim.c
 csim-ref: csim-ref.c
 	$(CC) -Wall -O3 -o csim-ref csim-ref.c
 
+case-all: case0 case1 case2 case3
+
 case0:
-	./main case0 > case0.trace
+	mkdir -p gemm_traces
+	./main case0 > gemm_traces/case0.trace
+	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case0.trace
 
 case1:
-	./main case1 > case1.trace
+	mkdir -p gemm_traces
+	./main case1 > gemm_traces/case1.trace
+	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case1.trace
 
 case2:
-	./main case2 > case2.trace
+	mkdir -p gemm_traces
+	./main case2 > gemm_traces/case2.trace
+	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case2.trace
 
 case3:
-	./main case3 > case3.trace
+	mkdir -p gemm_traces
+	./main case3 > gemm_traces/case3.trace
+	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case3.trace
 
 clean:
-	rm -f main demo *.o csim
+	rm -f main demo *.o csim handin.tar
+
+handin:
+	tar cvf handin.tar csim.c gemm.cpp
