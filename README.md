@@ -366,9 +366,14 @@ bash submit_gemm.sh
 - 寄存器可能不够用，这时候你可以暂存到 buffer 字段里，你可以评估一下这是否值得。
 - 你可以看看我们的[后记](#真实的故事背景与优化提示)。
 
-## 提交
+## 提交与报告
 
-我们使用 Github Classroom 来收发作业。其中 Github Classroom 自动打的分数仅供助教观察完成情况，和最终分数无关。
+首先，我们使用 Github Classroom 来发布作业并追踪完成情况，你需要及时 push 你完成后的作业。其中 Github Classroom 自动打的分数仅供助教观察完成情况，和最终分数无关。
+
+最终提交需要你提交 3 个文件到 OBE 上，分别是 `report/report.pdf`，`csim.c` 和 `gemm.cpp`。请严格按照以下步骤进行提交：
+
+- 将报告生成/放置在 `report/report.pdf` 下。
+- 执行 `make handin` ，它会在项目目录下生成一个 `handin.tar` 文件。请将这个文件原封不动地上传到 OBE 上。
 
 ## 后记
 

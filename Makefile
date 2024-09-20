@@ -58,4 +58,4 @@ clean:
 	rm -f main demo *.o csim handin.tar
 
 handin:
-	tar cvf handin.tar csim.c gemm.cpp
+	tar cvf handin.tar csim.c gemm.cpp report/report.pdf

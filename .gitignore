@@ -11,3 +11,4 @@ handin.tar
 __pycache__
 .overall_results
 .pytest_cache
+report.pdf
