@@ -1,27 +1,13 @@
 import subprocess
 import argparse
-
-
-def format_table(data):
-    column_widths = [max(len(str(item)) for item in col) for col in zip(*data)]
-    table_str = ""
-    for i, row in enumerate(data):
-        table_str += (
-            " | ".join(
-                f"{str(item).ljust(width)}" for item, width in zip(row, column_widths)
-            )
-            + "\n"
-        )
-        if i == 0:
-            table_str += "-+-".join("-" * width for width in column_widths) + "\n"
-
-    return table_str
+from utils import *
 
 
 def output_results(results: list):
-    total_ok = sum(1 for status, *_ in results if status == "OK ")
-    score = 100 * (total_ok / len(results)) ** (1 / 4)
-    results.insert(
+    results2 = results.copy()
+    total_ok = sum(1 for status, *_ in results2 if status == "OK ")
+    score = 100 * (total_ok / len(results2)) ** (1 / 4)
+    results2.insert(
         0,
         [
             "status",
@@ -31,27 +17,12 @@ def output_results(results: list):
             "handin: (hits, misses, evictions)",
         ],
     )
-    print(format_table(results))
+    print(format_table(results2))
     print(f"Score: {score:.2f}")
-
-
-def parse_csim_output(text) -> tuple:
-    "hits:15 misses:1 evictions:0"
-    return tuple(
-        map(
-            lambda x: int(x.split(":")[1]),
-            text.strip().split(" "),
-        )
-    )
-
-
-def parse_results_file(text) -> tuple:
-    "15 1 0"
-    return tuple(map(int, text.strip().split(" ")))
+    return total_ok, score
 
 
 def test_csim(ignore_ref=False):
-
     ref_executable = "csim-ref"
     ref_executable2 = "csim-ref2"
     handin_executable = "csim"
@@ -64,11 +35,18 @@ def test_csim(ignore_ref=False):
     ]
     results_file = ".csim_results"
     results = []
+    subprocess.run(
+        "make",
+        check=True,
+        shell=True,
+        capture_output=True,
+    )
     for s, E, b in [(5, 1, 5), (2, 4, 3), (4, 2, 4), (1, 1, 1)]:
         for trace_file in trace_files:
             if not ignore_ref:
                 subprocess.run(
                     f"./{ref_executable} -s {s} -E {E} -b {b} -t {trace_file}",
+                    check=True,
                     shell=True,
                     capture_output=True,
                 )
@@ -87,13 +65,15 @@ def test_csim(ignore_ref=False):
                 ), f"Unexpected results for {trace_file}"
             subprocess.run(
                 f"./{handin_executable} -s {s} -E {E} -b {b} -t {trace_file}",
+                check=True,
                 shell=True,
                 capture_output=True,
             )
             handin_results = parse_results_file(open(results_file, "r").read())
             status = "OK " if ref_results == handin_results else "ERROR"
             results.append((status, trace_file, (s, E, b), ref_results, handin_results))
-    output_results(results)
+    return output_results(results)
+    # return results
 
 
 def main():

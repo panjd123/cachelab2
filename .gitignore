@@ -9,3 +9,5 @@ csim
 handin.tar
 .access_key
 __pycache__
+.overall_results
+.pytest_cache
