@@ -3,7 +3,7 @@ from gemm_test import test_gemm as _test_gemm
 
 
 def test_csim2():
-    result = _test_gemm()
+    result = _test_gemm(ignore_submit=True)
     # miss_cache, miss_reg, latency, baseline
 
     latency_case1, baseline_case1 = result[2], result[3]
