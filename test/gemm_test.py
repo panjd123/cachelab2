@@ -61,6 +61,7 @@ def test_gemm(ignore_submit=False, no_linux=False):
     subprocess.run(["make"], check=True, shell=True, capture_output=True)
 
     for case, baseline in [
+        ("case0", 35),
         ("case1", 128450),
         ("case2", 4704384),
         ("case3", 4610517),

@@ -181,97 +181,97 @@ class BaseRegisterWarper {
     }
 
     /* <=> */
-    bool operator<(const BaseRegisterWarper<T>& other) {
+    bool operator<(const BaseRegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ < other.reg_;
     }
-    bool operator<(const BaseRegisterWarper<T>&& other) {
+    bool operator<(const BaseRegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ < other.reg_;
     }
-    bool operator<(const T& other) {
+    bool operator<(const T& other) const {
         check_valid();
         return reg_ < other;
     }
-    bool operator<(const T&& other) {
+    bool operator<(const T&& other) const {
         check_valid();
         return reg_ < other;
     }
 
-    bool operator>(const BaseRegisterWarper<T>& other) {
+    bool operator>(const BaseRegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ > other.reg_;
     }
-    bool operator>(const BaseRegisterWarper<T>&& other) {
+    bool operator>(const BaseRegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ > other.reg_;
     }
-    bool operator>(const T& other) {
+    bool operator>(const T& other) const {
         check_valid();
         return reg_ > other;
     }
-    bool operator>(const T&& other) {
+    bool operator>(const T&& other) const {
         check_valid();
         return reg_ > other;
     }
 
-    bool operator<=(const BaseRegisterWarper<T>& other) {
+    bool operator<=(const BaseRegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ <= other.reg_;
     }
-    bool operator<=(const BaseRegisterWarper<T>&& other) {
+    bool operator<=(const BaseRegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ <= other.reg_;
     }
-    bool operator<=(const T& other) {
+    bool operator<=(const T& other) const {
         check_valid();
         return reg_ <= other;
     }
-    bool operator<=(const T&& other) {
+    bool operator<=(const T&& other) const {
         check_valid();
         return reg_ <= other;
     }
 
-    bool operator>=(const BaseRegisterWarper<T>& other) {
+    bool operator>=(const BaseRegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ >= other.reg_;
     }
-    bool operator>=(const BaseRegisterWarper<T>&& other) {
+    bool operator>=(const BaseRegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ >= other.reg_;
     }
-    bool operator>=(const T& other) {
+    bool operator>=(const T& other) const {
         check_valid();
         return reg_ >= other;
     }
-    bool operator>=(const T&& other) {
+    bool operator>=(const T&& other) const {
         check_valid();
         return reg_ >= other;
     }
 
-    bool operator==(const BaseRegisterWarper<T>& other) {
+    bool operator==(const BaseRegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ == other.reg_;
     }
-    bool operator==(const BaseRegisterWarper<T>&& other) {
+    bool operator==(const BaseRegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ == other.reg_;
     }
-    bool operator==(const T& other) {
+    bool operator==(const T& other) const {
         check_valid();
         return reg_ == other;
     }
-    bool operator==(const T&& other) {
+    bool operator==(const T&& other) const {
         check_valid();
         return reg_ == other;
     }
@@ -285,7 +285,7 @@ class BaseRegisterWarper {
         return os;
     }
 
-    std::string info() {
+    std::string info() const {
         std::string state;
         switch (state_) {
             case RegisterWarperState::ACTIVE:
@@ -330,16 +330,16 @@ class PtrWarper : public BaseRegisterWarper<int> {
     PtrWarper(T* ptr)
         : BaseRegisterWarper(), ptr_(ptr) {
     }
-    MemoryWarper<T> operator*() {
+    MemoryWarper<T> operator*() const {
         return MemoryWarper<T>(ptr_);
     }
-    MemoryWarper<T> operator[](int offset) {
+    MemoryWarper<T> operator[](int offset) const {
         return MemoryWarper<T>(ptr_ + offset);
     }
-    MemoryWarper<T> operator[](const RegisterWarper<T>& offset) {
+    MemoryWarper<T> operator[](const RegisterWarper<T>& offset) const {
         return MemoryWarper<T>(ptr_ + offset.reg_);
     }
-    MemoryWarper<T> operator[](const RegisterWarper<T>&& offset) {
+    MemoryWarper<T> operator[](const RegisterWarper<T>&& offset) const {
         return MemoryWarper<T>(ptr_ + offset.reg_);
     }
     PtrWarper<T> operator=(RegisterWarper<T> other) {
@@ -347,27 +347,27 @@ class PtrWarper : public BaseRegisterWarper<int> {
         return *this;
     }
 
-    PtrWarper<T> operator+(int offset) {
+    PtrWarper<T> operator+(int offset) const {
         return PtrWarper<T>(ptr_ + offset);
     }
-    PtrWarper<T> operator+(const RegisterWarper<T>& offset) {
+    PtrWarper<T> operator+(const RegisterWarper<T>& offset) const {
         return PtrWarper<T>(ptr_ + offset.reg_);
     }
-    PtrWarper<T> operator+(const RegisterWarper<T>&& offset) {
+    PtrWarper<T> operator+(const RegisterWarper<T>&& offset) const {
         return PtrWarper<T>(ptr_ + offset.reg_);
     }
 
-    PtrWarper<T> operator-(int offset) {
+    PtrWarper<T> operator-(int offset) const {
         return PtrWarper<T>(ptr_ - offset);
     }
-    PtrWarper<T> operator-(const RegisterWarper<T>& offset) {
+    PtrWarper<T> operator-(const RegisterWarper<T>& offset) const {
         return PtrWarper<T>(ptr_ - offset.reg_);
     }
-    PtrWarper<T> operator-(const RegisterWarper<T>&& offset) {
+    PtrWarper<T> operator-(const RegisterWarper<T>&& offset) const {
         return PtrWarper<T>(ptr_ - offset.reg_);
     }
 
-    T operator-(PtrWarper<T> other) {
+    T operator-(PtrWarper<T> other) const {
         return ptr_ - other.ptr_;
     }
 
@@ -422,7 +422,7 @@ class PtrWarper : public BaseRegisterWarper<int> {
         return os;
     }
 
-    std::string info() {
+    std::string info() const {
         std::string state;
         switch (state_) {
             case RegisterWarperState::ACTIVE:
@@ -507,17 +507,17 @@ class RegisterWarper : public BaseRegisterWarper<int> {
 
     /* + */
 
-    T operator+(const RegisterWarper<T>& other) {
+    T operator+(const RegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ + other.reg_;
     }
-    T operator+(const RegisterWarper<T>&& other) {
+    T operator+(const RegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ + other.reg_;
     }
-    T operator+(const T other) {
+    T operator+(const T other) const {
         check_valid();
         return reg_ + other;
     }
@@ -555,17 +555,17 @@ class RegisterWarper : public BaseRegisterWarper<int> {
 
     /* - */
 
-    T operator-(const RegisterWarper<T>& other) {
+    T operator-(const RegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ - other.reg_;
     }
-    T operator-(const RegisterWarper<T>&& other) {
+    T operator-(const RegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ - other.reg_;
     }
-    T operator-(const T other) {
+    T operator-(const T other) const {
         check_valid();
         other.check_valid();
         return reg_ - other;
@@ -603,17 +603,17 @@ class RegisterWarper : public BaseRegisterWarper<int> {
     // }
 
     /* * */
-    T operator*(const RegisterWarper<T>& other) {
+    T operator*(const RegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ * other.reg_;
     }
-    T operator*(const RegisterWarper<T>&& other) {
+    T operator*(const RegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ * other.reg_;
     }
-    T operator*(const T other) {
+    T operator*(const T other) const {
         check_valid();
         return reg_ * other;
     }
@@ -641,17 +641,17 @@ class RegisterWarper : public BaseRegisterWarper<int> {
     }
 
     /* / */
-    T operator/(const RegisterWarper<T>& other) {
+    T operator/(const RegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ / other.reg_;
     }
-    T operator/(const RegisterWarper<T>&& other) {
+    T operator/(const RegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ / other.reg_;
     }
-    T operator/(const T other) {
+    T operator/(const T other) const {
         check_valid();
         return reg_ / other;
     }
@@ -679,17 +679,17 @@ class RegisterWarper : public BaseRegisterWarper<int> {
     }
 
     /* % */
-    T operator%(const RegisterWarper<T>& other) {
+    T operator%(const RegisterWarper<T>& other) const {
         check_valid();
         other.check_valid();
         return reg_ % other.reg_;
     }
-    T operator%(const RegisterWarper<T>&& other) {
+    T operator%(const RegisterWarper<T>&& other) const {
         check_valid();
         other.check_valid();
         return reg_ % other.reg_;
     }
-    T operator%(const T other) {
+    T operator%(const T other) const {
         check_valid();
         return reg_ % other;
     }
