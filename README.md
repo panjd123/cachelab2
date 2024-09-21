@@ -4,9 +4,11 @@ RUC CacheLab 2 - CMU CacheLab 升级版
 
 ## 项目编译与环境指南
 
-本实验要求的环境是 `Linux x86_64`。典型场景是用 WSL2 进行开发，如果你不具有这个环境，比如你是 Mac 用户，请访问 [https://ics.ruc.panjd.net](https://ics.ruc.panjd.net) 获取服务器登陆信息，在服务器上完成本实验。
+本实验要求的环境是 `Ubuntu 20.04` 及以上。典型场景是用 WSL2 进行开发，如果你不具有这个环境，比如你是 Mac 用户，请访问 [https://ics.ruc.panjd.net](https://ics.ruc.panjd.net) 获取服务器登陆信息，在服务器上完成本实验。
 
 > 实际上，在其他操作系统上也可以完成本实验，只是不能得到最佳的编程体验。
+
+> 面向高级用户，我们还提供了 devcontainer 的支持。有需要的同学可以自行使用。
 
 ### 排行榜提交前的准备工作
 

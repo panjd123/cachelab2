@@ -1,0 +1,24 @@
+{
+    "name": "Cachelab",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "editor.formatOnSave": false,
+                "[c]": {
+                    "editor.defaultFormatter": "xaver.clang-format"
+                },
+                "[cpp]": {
+                    "editor.defaultFormatter": "xaver.clang-format"
+                }
+            },
+            "extensions": [
+                "ms-vscode.cpptools",
+                "xaver.clang-format"
+            ]
+        }
+    }
+}
