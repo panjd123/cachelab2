@@ -6,6 +6,8 @@ RUC CacheLab 2 - CMU CacheLab 升级版
 
 本实验要求的环境是 `Linux x86_64`。典型场景是用 WSL2 进行开发，如果你不具有这个环境，比如你是 Mac 用户，请访问 [https://ics.ruc.panjd.net](https://ics.ruc.panjd.net) 获取服务器登陆信息，在服务器上完成本实验。
 
+> 实际上，在其他操作系统上也可以完成本实验，只是不能得到最佳的编程体验。
+
 ### 排行榜提交前的准备工作
 
 本实验的 Part B 部分，我们会采用~~紧张刺激的~~打榜的形式来计算分数，见 [https://cachelab.ruc.panjd.net](https://cachelab.ruc.panjd.net)。在你开始本实验前，请先做好如下配置：
@@ -224,6 +226,10 @@ Examples:
 
 ```bash
 python3 test/csim_test.py
+
+# 非 linux 用户，你可以这样测试，我们会仅执行你的 csim，你需要对照下文来检查结果是否正确
+# 或者 push 到 Github Classroom 里，由 autograding 来测试 
+python3 test/csim_test.py --no-linux 
 ```
 
 得到这样的输出代表你的实现是正确的：
@@ -333,6 +339,10 @@ void gemm_case1(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 
 ```bash
 python test/gemm_test.py
+
+# 对于非 linux 用户，我们会用你的 csim 替代 csim-ref 来完成本测试
+# 你需要保证你的 csim 是正确的，否则这一节的结果将没有意义
+python test/gemm_test.py --no-linux
 ```
 
 或者仅上传：

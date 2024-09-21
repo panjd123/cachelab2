@@ -1,5 +1,6 @@
 import subprocess
 import os.path as osp
+import argparse
 from utils import *
 
 
@@ -35,8 +36,13 @@ def output_results(results: list, baseline: tuple):
     return o_results
 
 
-def test_gemm_case(case: str, baseline: int) -> int:
-    result = subprocess.run(f"make {case}", check=True, shell=True, capture_output=True)
+def test_gemm_case(case: str, baseline: int, no_linux=False) -> int:
+    result = subprocess.run(
+        f"make {case}" if not no_linux else f"make {case}_no_linux",
+        check=True,
+        shell=True,
+        capture_output=True,
+    )
     miss_reg = get_line_num(f"gemm_traces/{case}.trace")
     miss_cache = parse_results_file(open(".csim_results", "r").read())[1]
     latency = 15 * miss_cache + miss_reg
@@ -44,7 +50,7 @@ def test_gemm_case(case: str, baseline: int) -> int:
     return case, miss_cache, miss_reg, latency, speedup
 
 
-def test_gemm(ignore_submit=False):
+def test_gemm(ignore_submit=False, no_linux=False):
     if not ignore_submit:
         if not osp.exists(".access_key"):
             print("Please run bash submit_gemm.sh to setup the access key.")
@@ -59,7 +65,7 @@ def test_gemm(ignore_submit=False):
         ("case2", 4704384),
         ("case3", 4610517),
     ]:
-        result = test_gemm_case(case, baseline)
+        result = test_gemm_case(case, baseline, no_linux=no_linux)
         results.append(result)
 
     o_results = output_results(results, (128450, 4704384, 4610517))
@@ -76,7 +82,10 @@ def test_gemm(ignore_submit=False):
 
 
 def main():
-    test_gemm()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-linux", action="store_true")
+    args = parser.parse_args()
+    test_gemm(no_linux=args.no_linux)
 
 
 if __name__ == "__main__":

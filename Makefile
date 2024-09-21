@@ -44,15 +44,30 @@ case1:
 	./main case1 > gemm_traces/case1.trace
 	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case1.trace
 
+case1_no_linux:
+	mkdir -p gemm_traces
+	./main case1 > gemm_traces/case1.trace
+	./csim -s 5 -E 1 -b 5 -t gemm_traces/case1.trace
+
 case2:
 	mkdir -p gemm_traces
 	./main case2 > gemm_traces/case2.trace
 	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case2.trace
 
+case2_no_linux:
+	mkdir -p gemm_traces
+	./main case2 > gemm_traces/case2.trace
+	./csim -s 5 -E 1 -b 5 -t gemm_traces/case2.trace
+
 case3:
 	mkdir -p gemm_traces
 	./main case3 > gemm_traces/case3.trace
 	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case3.trace
+
+case3_no_linux:
+	mkdir -p gemm_traces
+	./main case3 > gemm_traces/case3.trace
+	./csim -s 5 -E 1 -b 5 -t gemm_traces/case3.trace
 
 clean:
 	rm -f main demo *.o csim handin.tar
