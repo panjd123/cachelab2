@@ -1,4 +1,5 @@
 import subprocess
+import os.path as osp
 from utils import *
 
 
@@ -44,6 +45,11 @@ def test_gemm_case(case: str, baseline: int) -> int:
 
 
 def test_gemm(ignore_submit=False):
+    if not ignore_submit:
+        if not osp.exists(".access_key"):
+            print("Please run bash submit_gemm.sh to setup the access key.")
+            exit(0)
+
     # Local test
     results = []
     subprocess.run(["make"], check=True, shell=True, capture_output=True)

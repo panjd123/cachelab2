@@ -19,7 +19,7 @@ RUC CacheLab 2 - CMU CacheLab 升级版
     ```
 5. 如果提交成功，你应该会看到终端输出：
     ```bash
-    Name: 张三, Student ID: 2000000000, Score: 5.00
+    Name: 张三, Student ID: 2000000000, 提交成功，请在至少 5 秒后刷新 https://cachelab.ruc.panjd.net 查看
     ```
 
 这个命令的本质是把该文件夹下的 `gemm.cpp` 文件和访问密钥发送到我们的服务器上，我们会在后台运行你的代码，然后给你一个分数。
