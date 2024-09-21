@@ -1,0 +1,40 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-24.04
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: csim test
+      id: csim-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: csim test
+        setup-command: pipx install pytest
+        command: pytest test/csim_test2.py
+        timeout: 10
+        max-score: 50
+    - name: gemm test
+      id: gemm-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: gemm test
+        setup-command: # pipx install pytest
+        command: pytest test/gemm_test2.py
+        timeout: 10
+        max-score: 50
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        CSIM-TEST_RESULTS: "${{steps.csim-test.outputs.result}}"
+        GEMM-TEST_RESULTS: "${{steps.gemm-test.outputs.result}}"
+      with:
+        runners: csim-test,gemm-test
