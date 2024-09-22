@@ -5,7 +5,7 @@ CSIMFALGS=-Wall -O2 -g
 
 case_s=4
 case_E=1
-case_b=3
+case_b=4
 
 all: main demo csim # handin
 
