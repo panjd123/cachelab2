@@ -79,7 +79,7 @@ def test_csim(ignore_ref=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--no-linux",
+        "--no_linux",
         action="store_true",
     )
     args = parser.parse_args()

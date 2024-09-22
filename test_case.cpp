@@ -23,13 +23,29 @@ void case0() {
 }
 
 void case1() {
-    test_case(32, 32, 32, gemm_case1);
+    test_case(8, 8, 8, gemm_case1);
 }
 
 void case2() {
-    test_case(64, 64, 64, gemm_case2);
+    test_case(16, 16, 16, gemm_case2);
 }
 
 void case3() {
-    test_case(67, 61, 67, gemm_case3);
+    test_case(17, 13, 17, gemm_case3);
+}
+
+void case0_baseline() {
+    test_case(2, 2, 2, gemm_case0_baseline);
+}
+
+void case1_baseline() {
+    test_case(8, 8, 8, gemm_case1_baseline);
+}
+
+void case2_baseline() {
+    test_case(16, 16, 16, gemm_case2_baseline);
+}
+
+void case3_baseline() {
+    test_case(17, 13, 17, gemm_case3_baseline);
 }

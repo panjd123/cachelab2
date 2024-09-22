@@ -14,6 +14,7 @@ void demo(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
                               // 其开销等于从寄存器到内存
     dtype_ptr subC = C + 10;  // 初始化一个指针，指针也会占用一个寄存器，注意函数传入的参数也占用了寄存器
     reg var[2];               // 你可以申请寄存器数组
+    // reg var2d[2][2];       // 你不可以申请这种二维数组的寄存器，因为框架暂不支持，你可以用摊平的一维数组代替
 
     // int mem1;                 // 但你不能申请内存，或者内存数组
     // int mem2[2];              // 但你不能申请内存，或者内存数组

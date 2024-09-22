@@ -6,3 +6,7 @@ void case0();
 void case1();
 void case2();
 void case3();
+void case0_baseline();
+void case1_baseline();
+void case2_baseline();
+void case3_baseline();

@@ -36,9 +36,9 @@ def output_results(results: list, baseline: tuple):
     return o_results
 
 
-def test_gemm_case(case: str, baseline: int, no_linux=False) -> int:
+def test_gemm_case(case: str, no_linux=False) -> tuple:
     result = subprocess.run(
-        f"make {case}" if not no_linux else f"make {case}_no_linux",
+        f"make {case}" + (" NO_LINUX=1" if no_linux else ""),
         check=True,
         shell=True,
         capture_output=True,
@@ -46,8 +46,7 @@ def test_gemm_case(case: str, baseline: int, no_linux=False) -> int:
     miss_reg = get_line_num(f"gemm_traces/{case}.trace")
     miss_cache = parse_results_file(open(".csim_results", "r").read())[1]
     latency = 15 * miss_cache + miss_reg
-    speedup = baseline / latency
-    return case, miss_cache, miss_reg, latency, speedup
+    return case, miss_cache, miss_reg, latency
 
 
 def test_gemm(ignore_submit=False, no_linux=False):
@@ -60,13 +59,20 @@ def test_gemm(ignore_submit=False, no_linux=False):
     results = []
     subprocess.run(["make"], check=True, shell=True, capture_output=True)
 
-    for case, baseline in [
-        ("case0", 35),
-        ("case1", 128450),
-        ("case2", 4704384),
-        ("case3", 4610517),
+    baseline = []
+
+    for case in [
+        "case0_baseline",
+        "case1_baseline",
+        "case2_baseline",
+        "case3_baseline",
     ]:
-        result = test_gemm_case(case, baseline, no_linux=no_linux)
+        result = test_gemm_case(case, no_linux=no_linux)
+        baseline.append(result[-1])
+
+    for case, baseline in zip(["case0", "case1", "case2", "case3"], baseline):
+        result = test_gemm_case(case, no_linux=no_linux)
+        result = (*result, baseline / result[-1])
         results.append(result)
 
     o_results = output_results(results, (128450, 4704384, 4610517))
@@ -84,7 +90,7 @@ def test_gemm(ignore_submit=False, no_linux=False):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--no-linux", action="store_true")
+    parser.add_argument("--no_linux", action="store_true")
     args = parser.parse_args()
     test_gemm(no_linux=args.no_linux)
 

@@ -168,6 +168,8 @@ for (reg i = 0; i < 2; ++i) {
 
 这样我们达到了理论上的最优性能，只需要 8 次 load 和 4 次 store。代价是我们需要大量的寄存器，而 CPU 上的寄存器是有限的，我们会在问题描述中详细规定硬件配置。
 
+> 以上的二维 `reg tmpa[2][2]` 仅仅是演示方便，本实验提供的实际框架不支持这种写法，只能写成一维的。
+
 ## 问题描述
 
 ### Part A：缓存模拟器
@@ -242,7 +244,7 @@ python3 test/csim_test.py
 
 # 非 linux 用户，你可以这样测试，我们会仅执行你的 csim，你需要对照下文来检查结果是否正确
 # 或者 push 到 Github Classroom 里，由 autograding 来测试 
-python3 test/csim_test.py --no-linux 
+python3 test/csim_test.py --no_linux 
 ```
 
 得到这样的输出代表你的实现是正确的：
@@ -356,7 +358,7 @@ python test/gemm_test.py
 
 # 对于非 linux 用户，我们会用你的 csim 替代 csim-ref 来完成本测试
 # 你需要保证你的 csim 是正确的，否则这一节的结果将没有意义
-python test/gemm_test.py --no-linux
+python test/gemm_test.py --no_linux
 ```
 
 或者仅上传：

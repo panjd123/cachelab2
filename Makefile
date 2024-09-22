@@ -3,6 +3,10 @@ CFLAGS=-Wall -O0 -g -std=c++17 -fsanitize=address
 CSIMFALGS=-Wall -O2 -g
 # change to "CSIMFALGS=-Wall -O0 -g" for debugging
 
+case_s=4
+case_E=1
+case_b=3
+
 all: main demo csim # handin
 
 matrix.o: matrix.cpp matrix.h common.h
@@ -11,14 +15,17 @@ matrix.o: matrix.cpp matrix.h common.h
 gemm.o: gemm.cpp matrix.h common.h
 	$(CC) $(CFLAGS) -c gemm.cpp
 
+gemm_baseline.o: gemm_baseline.cpp matrix.h common.h
+	$(CC) $(CFLAGS) -c gemm_baseline.cpp
+
 test_case.o: test_case.cpp gemm.h matrix.h common.h
 	$(CC) $(CFLAGS) -c test_case.cpp
 
 main.o: main.cpp gemm.h matrix.h common.h test_case.h
 	$(CC) $(CFLAGS) -c main.cpp
 
-main: main.o gemm.o matrix.o test_case.o
-	$(CC) $(CFLAGS) -o main main.o gemm.o matrix.o test_case.o
+main: main.o gemm.o matrix.o test_case.o gemm_baseline.o
+	$(CC) $(CFLAGS) -o main main.o gemm.o gemm_baseline.o matrix.o test_case.o
 
 demo.o: demo.cpp gemm.h matrix.h common.h
 	$(CC) $(CFLAGS) -c demo.cpp
@@ -34,40 +41,14 @@ csim-ref: csim-ref.c
 
 case-all: case0 case1 case2 case3
 
-case0:
+case%:
 	mkdir -p gemm_traces
-	./main case0 > gemm_traces/case0.trace
-	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case0.trace
-
-case1:
-	mkdir -p gemm_traces
-	./main case1 > gemm_traces/case1.trace
-	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case1.trace
-
-case1_no_linux:
-	mkdir -p gemm_traces
-	./main case1 > gemm_traces/case1.trace
-	./csim -s 5 -E 1 -b 5 -t gemm_traces/case1.trace
-
-case2:
-	mkdir -p gemm_traces
-	./main case2 > gemm_traces/case2.trace
-	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case2.trace
-
-case2_no_linux:
-	mkdir -p gemm_traces
-	./main case2 > gemm_traces/case2.trace
-	./csim -s 5 -E 1 -b 5 -t gemm_traces/case2.trace
-
-case3:
-	mkdir -p gemm_traces
-	./main case3 > gemm_traces/case3.trace
-	./csim-ref -s 5 -E 1 -b 5 -t gemm_traces/case3.trace
-
-case3_no_linux:
-	mkdir -p gemm_traces
-	./main case3 > gemm_traces/case3.trace
-	./csim -s 5 -E 1 -b 5 -t gemm_traces/case3.trace
+	./main $@ > gemm_traces/$@.trace
+	@if [ "$(NO_LINUX)" = "true" ]; then \
+		./csim -s $(case_s) -E $(case_E) -b $(case_b) -t gemm_traces/$@.trace; \
+	else \
+		./csim-ref -s $(case_s) -E $(case_E) -b $(case_b) -t gemm_traces/$@.trace; \
+	fi
 
 clean:
 	rm -f main demo *.o csim handin.tar
