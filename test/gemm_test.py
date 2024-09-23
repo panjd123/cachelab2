@@ -86,11 +86,8 @@ def test_gemm(ignore_submit=False, no_linux=False, baseline_only=False):
 
     if not ignore_submit:
         # Upload
-        submission_result = subprocess.run(
-            ["bash", "submit_gemm.sh"], check=True, capture_output=True, text=True
-        )
-        print("Leaderboard Submission Feedback:")
-        print(submission_result.stdout.strip())
+        print("Leaderboard Submitting...")
+        submission_result = subprocess.run(["bash", "submit_gemm.sh"], check=True)
 
     return o_results
 

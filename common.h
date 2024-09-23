@@ -28,7 +28,7 @@ enum class MemoryAccessType {
 enum class RegisterWarperState {
     ACTIVE,
     INACTIVE,
-    TMP
+    TMP  // deprecated
 };
 
 class CachelabException : public std::exception {
@@ -331,7 +331,7 @@ class PtrWarper : public BaseRegisterWarper<int> {
    public:
     static std::vector<MemoryAccessLog<T>> access_logs;
     static T* base;
-    static size_t base_offset;
+    static T* base_offset;
     T* ptr_;
     PtrWarper(T* ptr)
         : BaseRegisterWarper(), ptr_(ptr) {
@@ -452,7 +452,7 @@ class PtrWarper : public BaseRegisterWarper<int> {
                 state = "UNKOWN";
                 break;
         }
-        return "$" + std::to_string(reg_id_) + "(" + state + "): " + std::to_string(ptr_ - PtrWarper<T>::base + PtrWarper<T>::base_offset);
+        return "$" + std::to_string(reg_id_) + "(" + state + "): " + std::to_string(reinterpret_cast<size_t>(ptr_ - PtrWarper<T>::base + PtrWarper<T>::base_offset));
     }
 };
 
@@ -463,7 +463,7 @@ template <typename T>
 T* PtrWarper<T>::base = 0;
 
 template <typename T>
-size_t PtrWarper<T>::base_offset = 0;
+T* PtrWarper<T>::base_offset = 0;
 
 template <typename T>
 class MemoryWarper {

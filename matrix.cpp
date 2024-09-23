@@ -11,7 +11,7 @@ std::tuple<dtype_ptr, dtype_ptr, dtype_ptr, dtype_ptr> init(int m, int n, int p)
     int* rawC = rawB + n * p;
     int* buffer = rawC + m * p;
     dtype_ptr::base = mem_pool;
-    dtype_ptr::base_offset = 0x30000000;
+    dtype_ptr::base_offset = (int*)0x30000000;
     ptrs.push_back(mem_pool);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {

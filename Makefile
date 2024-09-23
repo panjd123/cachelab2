@@ -2,9 +2,9 @@ CC=g++
 CFLAGS=-Wall -O0 -g -std=c++17 -fsanitize=address
 CSIMFALGS=-Wall -O0 -g
 
-case_s=3
+case_s=4
 case_E=1
-case_b=4
+case_b=5
 
 all: main demo csim # handin
 

@@ -11,11 +11,11 @@
 如果你有定义常量的需求（更严谨的说法是，你想定义的是汇编层面的立即数，不应该占用寄存器），请参考下面这种方式使用宏定义来完成。
 */
 
-#include "gemm.h"
+#include "cachelab.h"
 
-#define m 2
-#define n 2
-#define p 2
+#define m case0_m
+#define n case0_n
+#define p case0_p
 
 // // 我们用这个 2*2*2 的矩阵乘法来演示寄存器是怎么被分配的
 // void gemm_case0(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {  // allocate 0 1 2 3
@@ -66,9 +66,9 @@ void gemm_case0(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 #undef n
 #undef p
 
-#define m 8
-#define n 8
-#define p 8
+#define m case1_m
+#define n case1_n
+#define p case1_p
 
 void gemm_case1(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     for (reg i = 0; i < m; ++i) {
@@ -88,9 +88,9 @@ void gemm_case1(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 #undef n
 #undef p
 
-#define m 16
-#define n 16
-#define p 16
+#define m case2_m
+#define n case2_n
+#define p case2_p
 
 void gemm_case2(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     for (reg i = 0; i < m; ++i) {
@@ -110,9 +110,9 @@ void gemm_case2(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 #undef n
 #undef p
 
-#define m 17
-#define n 13
-#define p 17
+#define m case3_m
+#define n case3_n
+#define p case3_p
 
 void gemm_case3(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     for (reg i = 0; i < m; ++i) {
