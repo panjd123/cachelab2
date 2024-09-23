@@ -351,11 +351,11 @@ void gemm_case1(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
 运行以下命令可以在本地获取详细的性能报告，同时上传 `gemm.cpp` 到排行榜上：
 
 ```bash
-python test/gemm_test.py
+python3 test/gemm_test.py
 
 # 对于非 linux 用户，我们会用你的 csim 替代 csim-ref 来完成本测试
 # 你需要保证你的 csim 是正确的，否则这一节的结果将没有意义
-python test/gemm_test.py --no_linux
+python3 test/gemm_test.py --no_linux
 ```
 
 或者仅上传：
