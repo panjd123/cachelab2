@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <vector>
 
+#define NDEBUG
+
 template <typename T>
 class RegisterWarper;
 
@@ -74,7 +76,9 @@ inline int find_reg() {
     for (int i = 0; i < reg_num; i++) {
         if (!reg_map[i]) {
             reg_map[i] = true;
-            // std::cerr << "allocate reg: " << i << std::endl;
+#ifndef NDEBUG
+            std::cerr << "allocate reg: " << i << std::endl;
+#endif
             return i;
         }
     }
@@ -82,7 +86,9 @@ inline int find_reg() {
 }
 
 inline void free_reg(int reg_id) {
-    // std::cerr << "free reg: " << reg_id << std::endl;
+#ifndef NDEBUG
+    std::cerr << "free reg: " << reg_id << std::endl;
+#endif
     reg_map[reg_id] = false;
 }
 
@@ -330,6 +336,14 @@ class PtrWarper : public BaseRegisterWarper<int> {
     PtrWarper(T* ptr)
         : BaseRegisterWarper(), ptr_(ptr) {
     }
+
+    using BaseRegisterWarper<int>::operator=;
+    using BaseRegisterWarper<int>::operator==;
+    using BaseRegisterWarper<int>::operator<;
+    using BaseRegisterWarper<int>::operator>;
+    using BaseRegisterWarper<int>::operator<=;
+    using BaseRegisterWarper<int>::operator>=;
+
     MemoryWarper<T> operator*() const {
         return MemoryWarper<T>(ptr_);
     }
@@ -504,6 +518,12 @@ class RegisterWarper : public BaseRegisterWarper<int> {
 
    public:
     using BaseRegisterWarper<T>::BaseRegisterWarper;
+    using BaseRegisterWarper<T>::operator=;
+    using BaseRegisterWarper<T>::operator==;
+    using BaseRegisterWarper<T>::operator<;
+    using BaseRegisterWarper<T>::operator>;
+    using BaseRegisterWarper<T>::operator<=;
+    using BaseRegisterWarper<T>::operator>=;
 
     /* + */
 

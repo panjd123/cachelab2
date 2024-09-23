@@ -3,7 +3,7 @@ CFLAGS=-Wall -O0 -g -std=c++17 -fsanitize=address
 CSIMFALGS=-Wall -O2 -g
 # change to "CSIMFALGS=-Wall -O0 -g" for debugging
 
-case_s=4
+case_s=3
 case_E=1
 case_b=4
 
@@ -42,6 +42,7 @@ csim-ref: csim-ref.c
 case-all: case0 case1 case2 case3
 
 case%:
+	make
 	mkdir -p gemm_traces
 	./main $@ > gemm_traces/$@.trace
 	@if [ "$(NO_LINUX)" = "true" ]; then \

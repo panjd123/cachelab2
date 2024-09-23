@@ -11,7 +11,7 @@ def get_line_num(file) -> int:
 
 def output_results(results: list, baseline: tuple):
     results2 = results.copy()
-    weight = [0.3, 0.3, 0.4]
+    weight = [0, 0.3, 0.3, 0.4]
     weighted_speedup = sum(
         speedup * w for (_, _, _, _, speedup), w in zip(results2, weight)
     )
@@ -49,7 +49,7 @@ def test_gemm_case(case: str, no_linux=False) -> tuple:
     return case, miss_cache, miss_reg, latency
 
 
-def test_gemm(ignore_submit=False, no_linux=False):
+def test_gemm(ignore_submit=False, no_linux=False, baseline_only=False):
     if not ignore_submit:
         if not osp.exists(".access_key"):
             print("Please run bash submit_gemm.sh to setup the access key.")
@@ -59,7 +59,7 @@ def test_gemm(ignore_submit=False, no_linux=False):
     results = []
     subprocess.run(["make"], check=True, shell=True, capture_output=True)
 
-    baseline = []
+    baselines = []
 
     for case in [
         "case0_baseline",
@@ -68,14 +68,17 @@ def test_gemm(ignore_submit=False, no_linux=False):
         "case3_baseline",
     ]:
         result = test_gemm_case(case, no_linux=no_linux)
-        baseline.append(result[-1])
+        baselines.append(result[-1])
+        if baseline_only:
+            results.append(list(result) + [1])
 
-    for case, baseline in zip(["case0", "case1", "case2", "case3"], baseline):
-        result = test_gemm_case(case, no_linux=no_linux)
-        result = (*result, baseline / result[-1])
-        results.append(result)
+    if not baseline_only:
+        for case, baseline in zip(["case0", "case1", "case2", "case3"], baselines):
+            result = test_gemm_case(case, no_linux=no_linux)
+            result = (*result, baseline / result[-1])
+            results.append(result)
 
-    o_results = output_results(results, (128450, 4704384, 4610517))
+    o_results = output_results(results, baselines)
 
     if not ignore_submit:
         # Upload
@@ -91,8 +94,9 @@ def test_gemm(ignore_submit=False, no_linux=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no_linux", action="store_true")
+    parser.add_argument("--baseline", action="store_true")
     args = parser.parse_args()
-    test_gemm(no_linux=args.no_linux)
+    test_gemm(no_linux=args.no_linux, baseline_only=args.baseline)
 
 
 if __name__ == "__main__":

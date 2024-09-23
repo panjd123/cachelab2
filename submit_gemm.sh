@@ -30,6 +30,7 @@ fi
 # 使用 curl 命令发送 POST 请求
 curl -X POST "https://cachelab.ruc.panjd.net/upload" \
 -F "file=@$handin_file" \
--F "access_key=$access_key"
+-F "access_key=$access_key" \
+--progress-bar
 
 echo "" # 换行

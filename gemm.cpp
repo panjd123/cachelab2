@@ -35,7 +35,7 @@
 //     // free 4
 // }  // free 3 2 1 0
 
-// 我们用这个 2*2*2 的矩阵乘法来演示寄存器是怎么被分配的
+// 一种可能的优化
 void gemm_case0(dtype_ptr A, dtype_ptr B, dtype_ptr C, dtype_ptr buffer) {
     reg a[m * n];
     reg b[n * p];
