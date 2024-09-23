@@ -46,7 +46,7 @@ def test_gemm_case(case: str, no_linux=False) -> tuple:
     if result.returncode != 0:
         print(f"Failed on {case}")
         print(result.stderr.decode("utf-8"))
-        exit(1)
+        raise Exception(f"Failed on {case}")
     miss_reg = get_line_num(f"gemm_traces/{case}.trace")
     miss_cache = parse_results_file(open(".csim_results", "r").read())[1]
     latency = 15 * miss_cache + miss_reg
