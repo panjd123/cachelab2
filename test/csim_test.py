@@ -36,7 +36,7 @@ def test_csim(ignore_ref=False):
     results_file = ".csim_results"
     results = []
     subprocess.run(
-        "make",
+        ["make", "-j"],
         check=True,
         shell=True,
         capture_output=True,

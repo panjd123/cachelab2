@@ -38,7 +38,7 @@ def output_results(results: list, baseline: tuple):
 
 def test_gemm_case(case: str, no_linux=False) -> tuple:
     result = subprocess.run(
-        f"make {case}" + (" NO_LINUX=1" if no_linux else ""),
+        f"make {case} -j" + (" NO_LINUX=1" if no_linux else ""),
         check=True,
         shell=True,
         capture_output=True,
