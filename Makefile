@@ -1,7 +1,6 @@
 CC=g++
 CFLAGS=-Wall -O0 -g -std=c++17 -fsanitize=address
-CSIMFALGS=-Wall -O2 -g
-# change to "CSIMFALGS=-Wall -O0 -g" for debugging
+CSIMFALGS=-Wall -O0 -g
 
 case_s=3
 case_E=1
@@ -52,7 +51,7 @@ case%:
 	fi
 
 clean:
-	rm -f main demo *.o csim handin.tar
+	rm -rf main demo *.o csim handin.tar gemm_traces .csim_results .overall_results
 
 handin:
 	tar cvf handin.tar csim.c gemm.cpp report/report.pdf
