@@ -15,24 +15,24 @@ jobs:
       uses: actions/checkout@v4
     - name: csim test
       id: csim-test
-      uses: classroom-resources/autograding-command-grader@v1
+      uses: panjd123/autograding-command-grader@v1
       with:
         test-name: csim test
-        setup-command: pipx install pytest
-        command: pytest test/csim_test2.py
+        setup-command: 
+        command: python3 test/csim_test2.py
         timeout: 10
-        max-score: 50
+        max-score: 100
     - name: gemm test
       id: gemm-test
-      uses: classroom-resources/autograding-command-grader@v1
+      uses: panjd123/autograding-command-grader@v1
       with:
         test-name: gemm test
-        setup-command: # pipx install pytest
-        command: pytest test/gemm_test2.py
+        setup-command: 
+        command: python3 test/gemm_test2.py
         timeout: 10
-        max-score: 50
+        max-score: 100
     - name: Autograding Reporter
-      uses: classroom-resources/autograding-grading-reporter@v1
+      uses: panjd123/autograding-grading-reporter@v1
       env:
         CSIM-TEST_RESULTS: "${{steps.csim-test.outputs.result}}"
         GEMM-TEST_RESULTS: "${{steps.gemm-test.outputs.result}}"

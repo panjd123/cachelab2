@@ -12,3 +12,4 @@ __pycache__
 .overall_results
 .pytest_cache
 report.pdf
+.autograder_result
