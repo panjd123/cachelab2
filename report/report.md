@@ -10,6 +10,12 @@
 
 <!-- 保留两位小数，四舍五入 -->
 
+Autograder 截图：
+
+![](./imgs/autograder.png)
+
+<!-- 请同时将 Github Action 中的 csim test 和 gemm test 展开，截图 -->
+
 ## Part A: cache 模拟器 实现简述
 
 <!-- 150 字以内简述 LRU 替换策略的 cache 的具体实现细节 -->
