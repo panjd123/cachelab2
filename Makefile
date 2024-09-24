@@ -51,7 +51,7 @@ case%:
 	fi
 
 clean:
-	rm -rf main demo *.o csim handin.tar gemm_traces .csim_results .overall_results
+	rm -rf main demo *.o csim handin.tar gemm_traces .csim_results .overall_results .autograder_result
 
 handin:
 	tar cvf handin.tar csim.c gemm.cpp report/report.pdf
