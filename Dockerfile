@@ -10,13 +10,7 @@ RUN apt-get update && apt-get install -y \
     make \
     clang-format \
     git \
-    python3 \
-    python3-pip \
-    python3-venv
-
-RUN pip3 install --upgrade pip && \
-    pip3 install pipx && \
-    pipx install pytest
+    python3
 
 COPY . /app
 
